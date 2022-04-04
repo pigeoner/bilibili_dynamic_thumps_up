@@ -49,11 +49,9 @@ class DynamicLike:
         r = requests.post(url, data=data, headers=headers)
         if r.status_code == 200:
             res = json.loads(r.text)
-            if res['code'] != 0:
-                logging.error(f"给动态{data['dynamic_id']}点赞失败，错误信息：{res['msg']}")
         else:
             raise Exception('post请求出错，返回状态码为{}'.format(r.status_code))
-        return res
+        return res['code']
 
     def get_unliked_dynamic_lst(self):
         """
@@ -91,9 +89,12 @@ class DynamicLike:
         }
         for i, d in enumerate(dynamic_lst):
             data['dynamic_id'] = d
-            self._post(self._like_url, data, self._headers)
-            logging.info(
-                f'给用户 {self._host_uid} 的动态 {d} 点赞完毕（{i+1}/{len(dynamic_lst)}）')
+            res = self._post(self._like_url, data, self._headers)
+            if res == 0:
+                logging.info(
+                    f'给用户 {self._host_uid} 的动态 {d} 点赞完毕（{i+1}/{len(dynamic_lst)}）')
+            else:
+                logging.error(f"给动态{data['dynamic_id']}点赞失败，错误信息：{res['msg']}")
             sleep(self._interval)
         print(f'用户 {self._host_uid} 的全部动态点赞完毕')
 
