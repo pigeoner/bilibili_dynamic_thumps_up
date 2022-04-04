@@ -63,6 +63,7 @@ class DynamicLike:
         while has_more:
             url = self._dlst_url + str(offset_dynamic_id)
             res = self._get(url)
+            sleep(self._interval)  # 间隔若干秒，不然会被B站封（看不了别人的动态）
             has_more = res['data']['has_more']
             if not has_more:
                 break
@@ -95,7 +96,7 @@ class DynamicLike:
                     f'给用户 {self._host_uid} 的动态 {d} 点赞完毕（{i+1}/{len(dynamic_lst)}）')
             else:
                 logging.error(f"给动态{data['dynamic_id']}点赞失败，错误信息：{res['msg']}")
-            sleep(self._interval)
+            sleep(self._interval)  # 间隔若干秒
         print(f'用户 {self._host_uid} 的全部动态点赞完毕')
 
 
@@ -105,7 +106,7 @@ if __name__ == '__main__':
 
     host_id = ""  # 这里填写需要点赞的用户的B站UID
 
-    interval = 2  # 这里填写点赞时间间隔，默认为2秒
+    interval = 2  # 这里填写时间间隔，默认为2秒
 
     dlike = DynamicLike(cookie, host_id, interval)
 
