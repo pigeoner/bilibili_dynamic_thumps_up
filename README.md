@@ -14,6 +14,12 @@
     interval = 2  # 这里填写点赞时间间隔，默认为2秒
     ```
 
+- 安装依赖
+
+    ```shell
+    pip install -r requirements.txt
+    ```
+    
 - 运行
 
     `python biliThumpsUp.py`
