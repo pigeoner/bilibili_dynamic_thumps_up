@@ -51,7 +51,7 @@ class DynamicLike:
             res = json.loads(r.text)
         else:
             raise Exception('post请求出错，返回状态码为{}'.format(r.status_code))
-        return res['code']
+        return res
 
     def get_unliked_dynamic_lst(self):
         """
@@ -69,6 +69,7 @@ class DynamicLike:
                 break
             dynamic_lst += [e['desc']['dynamic_id_str']
                             for e in res['data']['cards'] if not e['desc']['is_liked']]
+            print(f'\r已收集{len(dynamic_lst)}个未点赞动态', end='')
             offset_dynamic_id = res['data']['cards'][-1]['desc']['dynamic_id_str']
         return dynamic_lst
 
@@ -79,7 +80,7 @@ class DynamicLike:
         print('--------------------开始收集--------------------')
         print(f'正在收集用户 {self._host_uid} 的全部未点赞动态...')
         dynamic_lst = self.get_unliked_dynamic_lst()
-        print(f'全部未点赞动态收集完毕，共 {len(dynamic_lst)} 个。')
+        print(f'\n全部未点赞动态收集完毕，共 {len(dynamic_lst)} 个。')
         print('--------------------开始点赞--------------------')
         data = {
             "uid": self._host_uid,
@@ -90,12 +91,28 @@ class DynamicLike:
         }
         for i, d in enumerate(dynamic_lst):
             data['dynamic_id'] = d
-            res = self._post(self._like_url, data, self._headers)
-            if res == 0:
-                logging.info(
-                    f'给用户 {self._host_uid} 的动态 {d} 点赞完毕（{i+1}/{len(dynamic_lst)}）')
-            else:
-                logging.error(f"给动态{data['dynamic_id']}点赞失败，错误信息：{res['msg']}")
+            try:
+                res = self._post(self._like_url, data, self._headers)
+                if res['code'] == 0:
+                    logging.info(
+                        f'给用户 {self._host_uid} 的动态 {d} 点赞完毕（{i+1}/{len(dynamic_lst)}）')
+                else:
+                    retry = 3
+                    retry_success = False
+                    rres = res
+                    for r in range(retry):
+                        logging.error(
+                            f"给用户 {self._host_uid} 的动态 {d} 点赞失败，错误信息：{rres['msg']}。重新尝试第 {r+1} 次...")
+                        rres = self._post(self._like_url, data, self._headers)
+                        if rres['code'] == 0:
+                             logging.info(
+                                f'给用户 {self._host_uid} 的动态 {d} 点赞完毕（{i+1}/{len(dynamic_lst)}）')
+                             retry_success = True
+                             break
+                    if not retry_success:
+                        logging.error(f"给用户 {self._host_uid} 的动态 {d} 点赞失败，累计尝试 {retry+1} 次")
+            except Exception as e:
+                print(e)
             sleep(self._interval)  # 间隔若干秒
         print(f'用户 {self._host_uid} 的全部动态点赞完毕')
 
